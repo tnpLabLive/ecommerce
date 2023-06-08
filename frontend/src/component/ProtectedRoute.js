@@ -4,7 +4,9 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 function ProtectedRoute({ children }) {
+
   const { authData, setAuthData } = useContext(userAuthContext);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -12,15 +14,18 @@ function ProtectedRoute({ children }) {
       fetchUserData();
     }
     // eslint-disable-next-line
-  }, [authData?.data?.email]);
+  }, []);
 
   const fetchUserData = async () => {
     try {
       const { data } = await axios.get("/me");
+      console.log('data:', data)
+      
       setAuthData(data);
     } catch (error) {
-      navigate("/");
-      alert(error.message);
+      console.log('error:', error)
+      // navigate("/");
+      // alert(error.message);
     }
   };
 

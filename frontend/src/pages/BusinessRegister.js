@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 
 function BusinessRegister() {
   const navigate = useNavigate();
-  
-  const {setAuthData } = useContext(userAuthContext);
+
+  const { setAuthData } = useContext(userAuthContext);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,30 +61,26 @@ function BusinessRegister() {
         <div className="col-sm-6">
           <h1>Login</h1>
           <form onSubmit={handleLogin}>
-            <div class="mb-3">
-              <label for="exampleInputEmail1" class="form-label">
-                Email address
-              </label>
+            <div className="mb-3">
+              <label className="form-label">Email address</label>
               <input
                 type="email"
-                class="form-control"
+                className="form-control"
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <div id="emailHelp" class="form-text">
+              <div id="emailHelp" className="form-text">
                 We'll never share your email with anyone else.
               </div>
             </div>
-            <div class="mb-3">
-              <label for="exampleInputPassword1" class="form-label">
-                Password
-              </label>
+            <div className="mb-3">
+              <label className="form-label">Password</label>
               <input
                 type="password"
-                class="form-control"
+                className="form-control"
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" className="btn btn-primary">
               Submit
             </button>
           </form>
@@ -92,40 +88,34 @@ function BusinessRegister() {
         <div className="col-sm-6">
           <h1>Create Account</h1>
           <form onSubmit={handleCreateAccount}>
-            <div class="mb-3">
-              <label for="exampleInputEmail1" class="form-label">
-                Name
-              </label>
+            <div className="mb-3">
+              <label className="form-label">Name</label>
               <input
                 type="text"
-                class="form-control"
+                className="form-control"
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
-            <div class="mb-3">
-              <label for="exampleInputEmail1" class="form-label">
-                Email address
-              </label>
+            <div className="mb-3">
+              <label className="form-label">Email address</label>
               <input
                 type="email"
-                class="form-control"
+                className="form-control"
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <div id="emailHelp" class="form-text">
+              <div id="emailHelp" className="form-text">
                 We'll never share your email with anyone else.
               </div>
             </div>
-            <div class="mb-3">
-              <label for="exampleInputPassword1" class="form-label">
-                Password
-              </label>
+            <div className="mb-3">
+              <label className="form-label">Password</label>
               <input
                 type="password"
-                class="form-control"
+                className="form-control"
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" className="btn btn-primary">
               Submit
             </button>
           </form>
