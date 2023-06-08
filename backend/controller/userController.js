@@ -1,16 +1,16 @@
 const { v4: uuidv4 } = require("uuid");
-var jwt = require("jsonwebtoken");
 let connection = require("../db/config");
+const { getToken, verifyToken } = require("../util/JwtToken");
+const CookieToken = require("../util/cookieToken");
+const CreateResponse = require("../util/CreateResponse");
 
 const getUser = (req, res) => {
   const query = "SELECT * FROM user";
   connection.query(query, (err, results) => {
     if (err) {
-      return res
-        .status(200)
-        .json({ data: null, message: err.message, status: false });
+      return CreateResponse(res, 500, null, err.message, false);
     } else {
-      return res.status(200).json({ data: results, message: "", status: true });
+      return CreateResponse(res, 200, results, "", true);
     }
   });
 };
@@ -20,118 +20,93 @@ const createUser = async (req, res) => {
   const data = {
     id: uuidv4(),
     name,
-    role,
     email,
+    role,
     password,
-    status: "Active",
+    status: "activate",
+    business_id: role === "admin" ? uuidv4() : null,
   };
 
   const query = "INSERT INTO user set ?";
 
-  connection.query(query, data, (err, results) => {
+  connection.query(query, data, (err) => {
     if (err) {
-      return res.status(500).json({
-        data: null,
-        message: err.message,
-        status: false,
-      });
+      return CreateResponse(res, 500, null, err.message, false);
     } else {
-      const token = jwt.sign(
-        { email: data.email, role: data.role, status: data.status },
-        "grhfghfhdfghrth45tbrt",
-        {
-          expiresIn: "1day",
-        }
-      );
-      const options = {
-        expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-      };
-      
-      return res
-        .status(200)
-        .cookie("token", token, options)
-        .json({
-          data: {
-            email: data.email,
-            role: data.role,
-            status: data.status,
-          },
-          message: "",
-          status: true,
-        });
+      const token = getToken(data);
+      return CookieToken(res, token, data);
     }
   });
 };
 
-const logInUser = async (req, res) => {
-  const { email, password } = req.body;
+// staff and user
+const deactivateUser = async (req, res) => {
+  const userId = req.params.id;
+  const updatedItem = { status: "deactivate" };
+  const query = "UPDATE user SET ? WHERE id = ?";
+  connection.query(query, [updatedItem, userId], (err, results) => {
+    if (err) {
+      CreateResponse(res, 500, null, err.message, false);
+    } else {
+      CreateResponse(res, 500, results, "", false);
+    }
+  });
+};
 
+const logInUser = (req, res) => {
+  const { email, password } = req.body;
   const query = "SELECT * FROM user WHERE email = ?";
 
   connection.query(query, email, (err, results) => {
     if (err) {
-      return res.status(500).json({
-        data: null,
-        message: "Please create account first",
-        status: false,
-      });
+      CreateResponse(res, 500, null, err.message, false);
     } else {
       const data = results[0];
-
-      if (data.password === password) {
-        const token = jwt.sign(
-          { email: data.email, role: data.role, status: data.status },
-          "grhfghfhdfghrth45tbrt",
-          {
-            expiresIn: "1day",
-          }
-        );
-        const getUser = jwt.verify(token, "grhfghfhdfghrth45tbrt");
-        const options = {
-          expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-          httpOnly: true,
-        };
-        return res.status(200).cookie("token", token, options).json({
-          data: getUser,
-          message: "",
-          status: true,
-        });
+      if (data) {
+        if (data.password === password) {
+          const token = getToken(data);
+          const getUser = verifyToken(token);
+          CookieToken(res, token, getUser);
+        } else {
+          CreateResponse(res, 401, null, "Password does not matched", false);
+        }
       } else {
-        return res.status(200).json({
-          data: null,
-          message: "password does not match",
-          status: true,
-        });
+        CreateResponse(res, 401, null, "Please create account first", false);
       }
     }
   });
 };
 
+// checking token present or not, if token present then give information about Loggedin persion
 const verifyUser = async (req, res) => {
   try {
-    const getToken = req.cookies.token;
+    const token = req.cookies.token;
 
-    if (getToken) {
-      const getUser = jwt.verify(getToken, "grhfghfhdfghrth45tbrt");
-      return res.status(200).json({
-        data: getUser,
-        message: "",
-        status: true,
+    if (token) {
+      const getUser = verifyToken(token);
+      const query = "SELECT * FROM user WHERE email = ?";
+      connection.query(query, getUser.email, (err, results) => {
+        if (err) {
+          return CreateResponse(res, 500, null, err.message, false);
+        } else {
+          if (results.length !== 0) {
+            return CreateResponse(res, 200, getUser, "", true);
+          } else {
+            return CreateResponse(
+              res,
+              500,
+              null,
+              "Please create account first",
+              true
+            );
+          }
+        }
       });
     } else {
-      return res.status(200).json({
-        data: null,
-        message: "Token not found",
-        status: false,
-      });
+      throw new Error("You are not logged in");
     }
   } catch (error) {
-    return res.status(200).json({
-      data: null,
-      message: error.message,
-      status: false,
-    });
+    return CreateResponse(res, 200, getUser, error.message, false);
   }
 };
 
@@ -143,12 +118,15 @@ const logoutUser = async (req, res) => {
       status: true,
     });
   } catch (error) {
-    return res.status(200).json({
-      data: null,
-      message: error.message,
-      status: false,
-    });
+    return CreateResponse(res, 500, null, error.message, false);
   }
 };
 
-module.exports = { getUser, createUser, logInUser, verifyUser, logoutUser };
+module.exports = {
+  getUser,
+  createUser,
+  logInUser,
+  verifyUser,
+  logoutUser,
+  deactivateUser,
+};

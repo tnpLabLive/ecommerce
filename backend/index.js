@@ -4,6 +4,7 @@ var cookieParser = require("cookie-parser");
 var cors = require("cors");
 require("./db/config");
 const userRoute = require("./route/userRoute");
+const storeRoute = require("./route/storeRoute");
 
 // app level middleware
 
@@ -22,10 +23,17 @@ app.use(express.urlencoded({ extended: true }));
 
 //  route
 app.use("/api", userRoute);
+app.use("/api", storeRoute);
 
 const PORT = process.env.PORT || 4004;
 app.use("/", (req, res) => {
   res.send("server runing");
+});
+
+// Stop crashing
+process.on("uncaughtException", function (err) {
+  console.error(err);
+  console.log("Node NOT Exiting...");
 });
 
 app.listen(PORT, () => {
